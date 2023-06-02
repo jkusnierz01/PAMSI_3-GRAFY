@@ -54,29 +54,32 @@ public:
                 return tmp; // zwracamy adres elementu ktory ma poszukiwana wartosc
             }
         }
-        cout << "W liscie nie ma podanego elementu!" << endl;
-        abort();
+        tmp = nullptr;
+        return tmp;
     }
     void removeElem(int Value)
     {
         LinkedListElem *SearchedElemPointer;
         LinkedListElem *NextElemPointer;
         LinkedListElem *PreviousElemPointer = Head; // adres poprzedniego elementu deklarujemy na poczatek listy
-        SearchedElemPointer = searchList(Value); // przypisujemy adres poszukiwanego elemetnu
-        NextElemPointer = SearchedElemPointer->next;    //bierzemy adres kolejnego elementu
-        if (Head != SearchedElemPointer)    //sprawdzamy czy 1 element to juz poszukiwany - jak tak to do Head musimy przypisac nastepny - nullptr 
+        SearchedElemPointer = searchList(Value);    // przypisujemy adres poszukiwanego elemetnu
+        if (SearchedElemPointer != nullptr)
         {
-            while (PreviousElemPointer->next != SearchedElemPointer) // szukamy adresu poprzedniego elementu wzgledem poszukiwanego
+            NextElemPointer = SearchedElemPointer->next; // bierzemy adres kolejnego elementu
+            if (Head != SearchedElemPointer)             // sprawdzamy czy 1 element to juz poszukiwany - jak tak to do Head musimy przypisac nastepny - nullptr
             {
-                PreviousElemPointer = PreviousElemPointer->next;    
+                while (PreviousElemPointer->next != SearchedElemPointer) // szukamy adresu poprzedniego elementu wzgledem poszukiwanego
+                {
+                    PreviousElemPointer = PreviousElemPointer->next;
+                }
+                PreviousElemPointer->next = NextElemPointer; // do adresu poprzedniego elementu - przypisujemy adres nastepnego czyli tak zeby pominac usuwany element
+                delete SearchedElemPointer;                  // usuwamy element
             }
-            PreviousElemPointer->next = NextElemPointer;        // do adresu poprzedniego elementu - przypisujemy adres nastepnego czyli tak zeby pominac usuwany element
-            delete SearchedElemPointer;                     //usuwamy element
-        }
-        else
-        {
-            Head = NextElemPointer;
-            delete SearchedElemPointer;
+            else
+            {
+                Head = NextElemPointer;
+                delete SearchedElemPointer;
+            }
         }
     }
 };

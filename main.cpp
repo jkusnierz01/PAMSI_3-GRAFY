@@ -113,26 +113,13 @@ using namespace std;
 // };
 int main()
 {
-    // int l_wierzcholkow = 5;
-    // EdgeListGraph Graph(l_wierzcholkow); // to jest juz deklaracja wierzcholkow - tworze 5 wierzcholkow od 0-4
-    // // dodaje miedzy wybranymi krawedzie
-    // Graph.addEdge(0, 1);
-    // Graph.addEdge(2, 1);
-    // Graph.addEdge(4, 2);
-    // Graph.addEdge(3, 1);
-    // Graph.addEdge(2, 3);
-    // Graph.addNode();
-    // // wypisuje sasiadow kazdego wierzchołka
-    // Graph.showNeighbours();
-    LinkedList Lista;
-    LinkedListElem* Elem;
-    Lista.addElem(5);
-    Lista.addElem(6);
-    Lista.addElem(15);
-    Lista.addElem(8);
-    Lista.addElem(10);
-    Lista.removeElem(8);
-    
-
-
+    Graph Graph;
+    Graph.addNode(0);
+    Graph.addNode(2);
+    Graph.addNode(3);
+    Graph.addEdge(0,2);
+    Graph.addEdge(2,3);
+    Graph.ShowNeighbours();
+    Graph.removeNode(3);
+    Graph.ShowNeighbours();
 }
