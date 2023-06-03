@@ -18,6 +18,14 @@ public:
     {
         Head = nullptr;
     }
+    ~LinkedList() {
+        LinkedListElem* current = Head;
+        while (current != nullptr) {
+            LinkedListElem* temp = current;
+            current = current->next;
+            delete temp;
+        }
+    }
     void addElem(int value)
     {
         LinkedListElem *New = new LinkedListElem;
