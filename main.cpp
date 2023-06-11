@@ -1,26 +1,40 @@
 #include <iostream>
 #include "graph.hh"
 #include "graph_matrix.hh"
+#include "algorytm.hh"
+#include <fstream>
+#include <string>
+#include <sstream>
 using namespace std;
 
 int main()
 {
-    // GraphMatrix graphmatrix(5);
-    // graphmatrix.addEdge(5,7);
-    // graphmatrix.addEdge(1,2);
-    // graphmatrix.addEdge(2,7);
-    // graphmatrix.showNeighbours();
-    // cout << endl;
-    Graph Graph;
-    Graph.addNode(0);
-    Graph.addNode(2);
-    Graph.addNode(3);
-    Graph.addEdge(0,2,5);
-    Graph.addEdge(2,3,5);
-    Graph.addEdge(8,4,10);
-    Graph.ShowNeighbours();
-    cout << endl;
-    Graph.removeNode(3);
-    Graph.removeEdge(0,2,5);
-    Graph.ShowNeighbours();
+    int GraphNodesNumber[] = {10, 50, 100, 500, 1000};
+    float GraphDensity[] = {0.25, 0.5, 0.75};
+    int EgdeNumber;
+    double time = 0.0;
+    Graph *graphPointer;
+    for (int z = 0; z < 5; z++)
+    {
+        for (int g = 0; g < 3; g++)
+        {
+            auto start_time = std::chrono::high_resolution_clock::now();
+            for (int i = 0; i < 100; i++)
+            {
+                graphPointer = new Graph;
+                EgdeNumber = (GraphDensity[g] * (GraphNodesNumber[z] * GraphNodesNumber[z] - GraphNodesNumber[z])) / 2;
+                cout << EgdeNumber << endl;
+                for (int x = 0; x < EgdeNumber; x++)
+                {
+                    graphPointer->addEdge(x, x + 1, x+1);
+                }
+                Kruskal(graphPointer,EgdeNumber);
+                delete[] graphPointer;
+                auto end_time = std::chrono::high_resolution_clock::now();
+                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+                time =+duration.count();
+            }
+            cout << "Gestosc nr: " << g +1 <<" Ilosc wierzcholkow: "<< GraphNodesNumber[z] << " , CZAS: "<< time/100 << endl;
+        }
+    }
 }

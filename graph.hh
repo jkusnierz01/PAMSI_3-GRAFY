@@ -2,10 +2,9 @@
 #define GRAPH_HH
 #include <iostream>
 #include "linkedlst.hh"
-#include "edgelist.hh"
 using namespace std;
 
-class GraphElem
+class GraphElem     // obiekt listy wierzcholkow
 {
 public:
     int NodeValue;
@@ -17,9 +16,14 @@ public:
         LinkedListPointer = new LinkedList;
         next = nullptr;
     }
+    GraphElem()
+    {
+        next=nullptr;
+        LinkedListPointer=nullptr;
+    }
 };
 
-class GraphElemEgde
+class GraphElemEgde // obiekt listy krawedzi
 {
 public:
     int Value;
@@ -31,6 +35,13 @@ public:
         Value = value;
         Node1 = n1;
         Node2 = n2;
+        next = nullptr;
+    }
+    GraphElemEgde()
+    {
+        Value = 0;
+        Node1 = nullptr;
+        Node2 = nullptr;
         next = nullptr;
     }
 };
@@ -45,6 +56,8 @@ public:
         EgdeHead = nullptr;
         Head = nullptr;
     }
+    // FUNKCJA WYSZUKUJACA KONKRETNY WIERZCHOLEK
+    // ZWRACA JEGO ADRES
     GraphElem *&searchGraph(int value)
     {
         GraphElem *tmp = Head;
@@ -63,6 +76,8 @@ public:
         tmp = nullptr;
         return tmp;
     }
+    // FUNKCJA WYSZUKUJACA KONKRETNY ELEMENT LIST KRAWEDZI
+    // ZWRACA JEGO ADRES
     GraphElemEgde *&searchGraphEgde(GraphElem *adress)
     {
         GraphElemEgde *tmp = EgdeHead;
@@ -81,6 +96,7 @@ public:
         tmp = nullptr;
         return tmp;
     }
+    // FUNKCJA DODAJACA WIERZCHOLEK DO LISTY WIERZCHOLKOW 
     void addNode(int Value)
     {
         GraphElem *New = new GraphElem(Value);
@@ -99,14 +115,18 @@ public:
             current->next = New;
         }
     }
+    // FUNKCJA DODAJACA KRAWEDZ MIEDZY WIERZCHOLKAMI
+    // DODANIE DO LISTY SASIEDZTWA I LISTY KRAWEDZI
     void addEdge(int Node1, int Node2, int Value)
     {
-        GraphElem *tmp1 = searchGraph(Node1); // sprawdzamy czy dane wierzcholki juz na liscie
+        // sprawdzamy czy dane wierzcholki juz na  wierzcholkow
+        GraphElem *tmp1 = searchGraph(Node1); 
         GraphElem *tmp2 = searchGraph(Node2);
-        if (tmp1 == nullptr) // jezeli nullptr znaczy ze ich nie ma
+        // jezeli nullptr znaczy ze ich nie ma
+        if (tmp1 == nullptr) 
         {
-            addNode(Node1);
-            tmp1 = searchGraph(Node1);
+            addNode(Node1);     // w takim razie dodajemy 
+            tmp1 = searchGraph(Node1);      // wyszukujemy jeszcze raz aby dostac adres tego elementu - moc sie do niego odwolac i dodac element do jego listy sasiedztwa
             tmp1->LinkedListPointer->addElem(Node2);
         }
         else // jezeli jest to sprawdz czy znajduje sie juz na liscie sasiedztwa
@@ -116,6 +136,7 @@ public:
                 tmp1->LinkedListPointer->addElem(Node2);
             }
         }
+        // to samo dla drugiego wierzcholka
         if (tmp2 == nullptr)
         {
             addNode(Node2);
@@ -131,8 +152,9 @@ public:
                 }
             }
         }
+        // teraz chcemy dodac krawedz do listy krawedzi
         GraphElemEgde *tmp = new GraphElemEgde(tmp1, tmp2, Value);
-        if (EgdeHead == nullptr)
+        if (EgdeHead == nullptr) // sprawdzamy czy lista pusta - jak tak to dodajemy jako 1 element, jak nie to idziemy na koniec listy i dodajemy
         {
             EgdeHead = tmp;
         }
@@ -147,6 +169,7 @@ public:
             current->next = tmp;
         }
     }
+    // FUNKCJA USUWAJACA KONKRETNY WIERZCHOLEK Z LISTY WIERZCHOLKOW ORAZ KRAWEDZ KTORA BYLA Z NIM ZWIAZANA
     void removeNode(int value)
     {
         GraphElemEgde *tmp2 = EgdeHead;
@@ -264,6 +287,58 @@ public:
             cout << endl;
         }
     }
+    void quicksort(GraphElemEgde tab[], int tab_size, int first)
+{
+    float pivot = tab[(first + tab_size-1) / 2].Value;
+    int left = first, right = tab_size - 1;
+    GraphElemEgde tmp;
+    while (left <= right)
+    {
+        while (tab[left].Value < pivot)
+        {
+            left++;
+        }
+        while (tab[right].Value > pivot)
+        {
+            right--;
+        }
+        if (left <= right)
+        {
+            tmp = tab[left];
+            tab[left] = tab[right];
+            tab[right] = tmp;
+            left++;
+            right--;
+        }
+    }
+    if (first < right)
+        quicksort(tab, right + 1, first);
+    if (left < tab_size - 1)
+        quicksort(tab, tab_size,left );
+}
+    void KruskalAlgoritm()
+    {
+        GraphElemEgde* tmp = EgdeHead;
+        int iterator = 0;
+        while(tmp != nullptr)
+        {
+            tmp = tmp->next;
+            iterator++;
+        }
+        GraphElemEgde tab[iterator];
+        tmp = EgdeHead;
+        for(int i = 0;i<iterator;i++)
+        {
+            tab[i].Value = tmp->Value;
+            tab[i].Node1 = tmp->Node1;
+            tab[i].Node2 = tmp->Node2;
+            tmp = tmp->next;
+        }
+        quicksort(tab,iterator,0);
+
+    }
+    
 };
+
 
 #endif

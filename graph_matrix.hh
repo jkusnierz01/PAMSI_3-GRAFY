@@ -1,197 +1,266 @@
 #ifndef GRAPHMATRIX_HH
 #define GRAPHMATRIX_HH
 #include <iostream>
-#include "linkedlst.hh"
+#include "graph.hh"
 using namespace std;
+// pomysl - macierz obiektow, dwa atrybuty: int, wskaznik na element listy wierzcholkow - wierzcholek
+// normalnie NULL ale jak wskazniki to znaczy ze sa sasiadami, int to wartosc wierzcholkow
+// pytanie jak robic dodawanie metoda addEgde(a,b) - spra
 
 class GraphMatrix
 {
 public:
-    int **AdjacencyMatrix;
+    GraphElem *Head;
+    GraphElemEgde *EgdeHead;
+    int **adjacencyMatrix;
     int NodesNumber;
-    int *NodesValuesPointer;
     GraphMatrix(int value)
     {
+        Head = nullptr;
+        EgdeHead = nullptr;
         NodesNumber = value;
-        AdjacencyMatrix = new int *[NodesNumber];
-        NodesValuesPointer = new int[NodesNumber];
+        adjacencyMatrix = new int *[NodesNumber];
         for (int x = 0; x < NodesNumber; x++)
         {
-            NodesValuesPointer[x] = 0;
-            AdjacencyMatrix[x] = new int[NodesNumber];
+            adjacencyMatrix[x] = new int[NodesNumber];
             for (int j = 0; j < NodesNumber; j++)
             {
-                AdjacencyMatrix[x][j] = 0;
+                adjacencyMatrix[x][j] = 0;
             }
         }
     }
-    ~GraphMatrix()
+    // metoda do dodania nowego wierzcholka do listy wierzchołkow
+    void addNodeList(int Value)
     {
-        // Usuwanie macierzy sąsiedztwa
-        for (int i = 0; i < NodesNumber; i++)
+        GraphElem *New = new GraphElem(Value);
+        if (Head == nullptr)
         {
-            delete[] AdjacencyMatrix[i];
+            Head = New;
         }
-        delete[] AdjacencyMatrix;
-        delete[] NodesValuesPointer;
+        else
+        {
+            GraphElem *current = Head;
+            // Przechodzenie do ostatniego węzła na liście
+            while (current->next != nullptr)
+            {
+                current = current->next;
+            }
+            current->next = New;
+        }
     }
-    void addEdge(int Node1, int Node2)
-    {
-        int index1;
-        int index2;
-        // dodajemy wartosci wierzcholkow - numery do tablicy pomocniczej
-        // stanowi ona lacznik miedzy wartosciami a indeksami tablicy - w macierz
-        // znajdujemy ich indeksy ale w odpowiednich elementach macierzy wstawic 1
-        for (int x = 0; x < NodesNumber; x++) 
-        {
-            if(NodesValuesPointer[x] == Node1)
-            {
-                index1 = x;
-                break;
-            }
-            if (NodesValuesPointer[x] == 0)
-            {
-                NodesValuesPointer[x] = Node1;
-                index1 = x;
-                break;
-            }
-        }
-        for (int x = 0; x < NodesNumber; x++)
-        {
-            if(NodesValuesPointer[x] == Node2)
-            {
-                index2 = x;
-                break;
-            }
-            if (NodesValuesPointer[x] == 0)
-            {
-                NodesValuesPointer[x] = Node2;
-                index2 = x;
-                break;
-            }
-        }
-
-        AdjacencyMatrix[index1][index2] = 1;
-        AdjacencyMatrix[index2][index1] = 1;
-    }
-    void addNode(int Node)
+    // metoda dodajaca nowy wierzcholek do macierzy sasiedztwa
+    void addNodeMatrix(int Node)
     {
         // Tworzenie nowej, większej macierzy sąsiedztwa w celu dodania nowego wierzcholka
-
         int newNodesNumber = NodesNumber + 1;
         int **newAdjacencyMatrix = new int *[newNodesNumber];
-        int *newNodesValuesPointer = new int[newNodesNumber];
 
         // Kopiowanie istniejących danych do nowej macierzy
-        for (int i = 0; i < NodesNumber; i++)
+        for (int i = 0; i < newNodesNumber; i++)
         {
             newAdjacencyMatrix[i] = new int[newNodesNumber];
-            newNodesValuesPointer[i] = NodesValuesPointer[i];
-            for (int j = 0; j < NodesNumber; j++)
+            for (int j = 0; j < newNodesNumber; j++)
             {
-                newAdjacencyMatrix[i][j] = AdjacencyMatrix[i][j];
+                if (i != 5 && j != 5)
+                {
+                    newAdjacencyMatrix[i][j] = adjacencyMatrix[i][j];
+                }
             }
         }
-
         // Inicjalizacja nowych elementów wiersza
         for (int i = 0; i < newNodesNumber; i++)
         {
-            newAdjacencyMatrix[newNodesNumber][i] = 0;
-            newAdjacencyMatrix[i][newNodesNumber] = 0;
+            newAdjacencyMatrix[newNodesNumber - 1][i] = 0;
+            newAdjacencyMatrix[i][newNodesNumber - 1] = 0;
         }
-
         // Usuwanie starej macierzy sąsiedztwa
         for (int i = 0; i < NodesNumber; i++)
         {
-            delete[] AdjacencyMatrix[i];
+            delete[] adjacencyMatrix[i];
         }
-        delete[] NodesValuesPointer;
-        delete[] AdjacencyMatrix;
+        delete[] adjacencyMatrix;
 
         // Aktualizacja wskaźników
-        AdjacencyMatrix = newAdjacencyMatrix;
+        adjacencyMatrix = newAdjacencyMatrix;
         NodesNumber = newNodesNumber;
     }
-    void removeEdge(int Node1, int Node2)
+    // dodanie nowego wierzcholka
+    void addNode(int Node)
     {
-        //znajujemy indeks odpowiedniego wierzcholka i w macierzy ustawiamy dla nich 0 
-        int index1, index2;
-        for (int x = 0; x < NodesNumber; x++)
-        {
-            if (NodesValuesPointer[x] == Node1)
-                index1 = x;
-            else if (NodesValuesPointer[x] == Node2)
-                index2 = x;
-        }
-        AdjacencyMatrix[index1][index2] = 0;
-        AdjacencyMatrix[index2][index1] = 0;
+        // addNodeList(Node);   // dodajemy nowy element do listy wierzcholkow
+        addNodeMatrix(Node); // dodanie nowego wierzcholka do macierzy sasiedztwa
     }
-    void removeNode(int Node)
+
+    int searchGraphIndex(int value)
     {
-        // Tworzenie nowej, mniejszej macierzy sąsiedztwa
-        int index1;
-        int newNodesNumber = NodesNumber - 1;
-        int **newAdjacencyMatrix = new int *[newNodesNumber];
-        int *newNodesValuesPointer = new int[newNodesNumber];
-        for (int x = 0; x < NodesNumber; x++)
+        GraphElem *tmp = Head;
+        int index = 0;
+        // przeszukujemy liste w poszukiwaniu konkretnego wierzcholka do momentu kiedy nie ma juz nastepnego elementu
+        while (tmp != nullptr) // sprawdzamy czy adres to nie nullptr - brak elementu - bo bylby segmentation fault inaczej
         {
-            if (NodesValuesPointer[x] == Node)
-                index1 = x;
+            if (tmp->NodeValue != value) // sprawdzamy czy poszukiwana wartosc
+            {
+                tmp = tmp->next;
+                index++;
+            }
+            else // jezeli tak to zwracamy adres znalezionego elementu
+            {
+                return index; // zwracamy adres elementu ktory ma poszukiwana wartosc
+            }
+        }
+        index = -1;
+        return index;
+    }
+    GraphElem *&searchGraph(int value)
+    {
+        GraphElem *tmp = Head;
+        // przeszukujemy liste w poszukiwaniu konkretnego wierzcholka do momentu kiedy nie ma juz nastepnego elementu
+        while (tmp != nullptr) // sprawdzamy czy adres to nie nullptr - brak elementu - bo bylby segmentation fault inaczej
+        {
+            if (tmp->NodeValue != value) // sprawdzamy czy poszukiwana wartosc
+            {
+                tmp = tmp->next;
+            }
+            else // jezeli tak to zwracamy adres znalezionego elementu
+            {
+                return tmp; // zwracamy adres elementu ktory ma poszukiwana wartosc
+            }
+        }
+        tmp = nullptr;
+        return tmp;
+    }
+    void removeEdge(int Node1, int Node2, int Value)
+    {
+        int index1 = searchGraphIndex(Node1);
+        int index2 = searchGraphIndex(Node2);
+        if (adjacencyMatrix[index1][index2] != 0 && adjacencyMatrix[index2][index1] != 0)
+        {
+            adjacencyMatrix[index1][index2] = 0;
+            adjacencyMatrix[index2][index1] = 0;
         }
 
-        // Kopiowanie istniejących danych do nowej macierzy (bez usuwanego wierzchołka)
-        int newRow = 0;
-        for (int i = 0; i < NodesNumber; i++)
+        // USUWANIE KRAWEDZI Z LISTY KRAWEDZI
+        GraphElemEgde *SearchedEdge = EgdeHead;
+        GraphElemEgde *NextEdgePointer;
+        GraphElemEgde *PreviousEdgePointer = EgdeHead;
+        while (SearchedEdge->Value != Value)
         {
-            // Pomijanie usuwanego wiersza
-            if (i == index1)
+            SearchedEdge = SearchedEdge->next;
+        }
+        NextEdgePointer = SearchedEdge->next;
+        if (PreviousEdgePointer == nullptr)
+        {
+            EgdeHead = NextEdgePointer;
+            delete SearchedEdge;
+        }
+        else
+        {
+            if (PreviousEdgePointer == EgdeHead)
             {
-                continue;
+                EgdeHead = NextEdgePointer;
             }
-
-            newAdjacencyMatrix[newRow] = new int[newNodesNumber];
-            newNodesValuesPointer = new int[newNodesNumber];
-
-            int newCol = 0;
-            for (int j = 0; j < NodesNumber; j++)
+            else
             {
-                // Pomijanie usuwanej kolumny
-                if (j == index1)
+                while (PreviousEdgePointer->next != SearchedEdge)
                 {
-                    continue;
+                    PreviousEdgePointer = PreviousEdgePointer->next;
                 }
-
-                newAdjacencyMatrix[newRow][newCol] = AdjacencyMatrix[i][j];
-                newNodesValuesPointer[newRow] = NodesValuesPointer[newNodesNumber];
-                newCol++;
+                PreviousEdgePointer = NextEdgePointer;
             }
-
-            newRow++;
+            delete SearchedEdge;
         }
+    }
+    void addEdge(int Node1, int Node2, int Value)
+    {
+        // sprawdzamy czy dane wierzcholki juz na liscie wierzcholkow
+        GraphElem *tmp1 = searchGraph(Node1);
+        GraphElem *tmp2 = searchGraph(Node2);
 
-        // Usuwanie starej macierzy sąsiedztwa
-        for (int i = 0; i < NodesNumber; i++)
+        // jezeli nullptr znaczy ze ich nie ma
+        if (tmp1 == nullptr)
         {
-            delete[] AdjacencyMatrix[i];
+            addNodeList(Node1); // w takim razie dodajemy
+            tmp1 = searchGraph(Node1); // potrzebujemy adresu, zeby wskaznik z krawedzi przypisac
         }
-        delete[] NodesValuesPointer;
-        delete[] AdjacencyMatrix;
+        // to samo dla drugiego wierzcholka
+        if (tmp2 == nullptr)
+        {
+            addNodeList(Node2);
+            tmp2 = searchGraph(Node2);
+        }
 
-        // Aktualizacja wskaźników
-        AdjacencyMatrix = newAdjacencyMatrix;
-        NodesNumber = newNodesNumber;
+        // teraz chcemy dodac krawedz do listy krawedzi
+        GraphElemEgde *tmp = new GraphElemEgde(tmp1, tmp2, Value);
+        if (EgdeHead == nullptr) // sprawdzamy czy lista pusta - jak tak to dodajemy jako 1 element, jak nie to idziemy na koniec listy i dodajemy
+        {
+            EgdeHead = tmp;
+        }
+        else
+        {
+            GraphElemEgde *current = EgdeHead;
+            // Przechodzenie do ostatniego węzła na liście
+            while (current->next != nullptr)
+            {
+                current = current->next;
+            }
+            current->next = tmp;
+        }
+
+        // chcemy dodać do macierzy sasiedztwa polaczenie miedzy odpowiednimi wiercholkami
+        int index1 = searchGraphIndex(Node1);
+        int index2 = searchGraphIndex(Node2);
+        if (index1 != (-1) && index2 != (-1))
+        {
+            if (index1 < NodesNumber && index2 << NodesNumber)
+            {
+                if (adjacencyMatrix[index1][index2] == 0 && adjacencyMatrix[index2][index1] == 0)
+                {
+                    adjacencyMatrix[index1][index2] = 1;
+                    adjacencyMatrix[index2][index1] = 1;
+                }
+            }
+        }
+        else
+        {
+            cout << "Brak podanych wierzcholkow" << endl;
+        }
+    }
+    int findNode(int index)
+    {
+        GraphElem* tmp = Head;
+        int i = 0;
+        while(i<index)
+        {
+            if(tmp!=nullptr)
+            {
+                tmp = tmp->next;
+            }
+            else
+            {
+                cout << "brak elementow na liscie" << endl;
+            }
+            i++;
+        }
+        return tmp->NodeValue;
     }
     void showNeighbours()
     {
-        for (int x = 0; x < NodesNumber; x++)
+        GraphElem *tmp = Head;
+        int index1,index2;
+        int vvalue;
+        for (int i = 0; i < NodesNumber; i++)
         {
-            cout << "Wierzcholek: " << NodesValuesPointer[x];
-            cout << " - sasiedzi -> ";
-            for (int y = 0; y < NodesNumber; y++)
+            if (tmp != nullptr)
             {
-                if (AdjacencyMatrix[x][y] == 1)
+                vvalue = tmp->NodeValue;
+                tmp = tmp->next;
+                cout << "Wierzchołek nr. " << vvalue << " - sasiedzi: ";
+            }
+            for (int j = 0; j < NodesNumber;j++)
+            {
+                if (adjacencyMatrix[i][j] == 1)
                 {
-                    cout << NodesValuesPointer[y] << ", ";
+                    cout << findNode(j) << ", ";
                 }
             }
             cout << endl;
