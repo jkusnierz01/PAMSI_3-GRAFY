@@ -5,36 +5,60 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <random>
 using namespace std;
 
 int main()
 {
+
+    // Graph* graph =   new Graph;
+    // graph->addEdge(0,1,4);
+    // graph->addEdge(1,2,2);
+    // graph->addEdge(0,2,6);
+    // graph->addEdge(3,2,9);
+    // graph->addEdge(1,3,5);
+    // graph->addEdge(3,4,1);
+    // graph->addEdge(4,2,7);
+    // graph->addEdge(2,5,8);
+    // graph->ShowNeighbours();
+    // Kruskal(graph,8,6);
+    // cout << endl;
+    // Prim(graph);
+    int random1, random2, random3;
     int GraphNodesNumber[] = {10, 50, 100, 500, 1000};
     float GraphDensity[] = {0.25, 0.5, 0.75};
     int EgdeNumber;
     double time = 0.0;
-    Graph *graphPointer;
+    GraphMatrix *graphPointer;
     for (int z = 0; z < 5; z++)
     {
         for (int g = 0; g < 3; g++)
         {
-            auto start_time = std::chrono::high_resolution_clock::now();
-            for (int i = 0; i < 100; i++)
+            time = 0;
+            // for (int i = 0; i < 100; i++)
+            // {
+            graphPointer = new GraphMatrix;
+            EgdeNumber = (GraphDensity[g] * (GraphNodesNumber[z] * GraphNodesNumber[z] - GraphNodesNumber[z])) / 2;
+            for (int x = 0; x < EgdeNumber; x++)
             {
-                graphPointer = new Graph;
-                EgdeNumber = (GraphDensity[g] * (GraphNodesNumber[z] * GraphNodesNumber[z] - GraphNodesNumber[z])) / 2;
-                cout << EgdeNumber << endl;
-                for (int x = 0; x < EgdeNumber; x++)
+                random1 = rand() % (GraphNodesNumber[z] + 1);
+                random2 = rand() % (GraphNodesNumber[z] + 1);
+                random3 = rand() % 101;
+                while (random2 == random1)
                 {
-                    graphPointer->addEdge(x, x + 1, x+1);
+                    random2 = rand() % (GraphNodesNumber[z] + 1);
                 }
-                Kruskal(graphPointer,EgdeNumber);
-                delete[] graphPointer;
-                auto end_time = std::chrono::high_resolution_clock::now();
-                auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-                time =+duration.count();
+                graphPointer->addEdge(random1, random2, random3);
             }
-            cout << "Gestosc nr: " << g +1 <<" Ilosc wierzcholkow: "<< GraphNodesNumber[z] << " , CZAS: "<< time/100 << endl;
+            auto start_time = std::chrono::high_resolution_clock::now();
+            Kruskal(graphPointer, EgdeNumber, GraphNodesNumber[z]);
+            //Prim(graphPointer);
+            delete[] graphPointer;
+            auto end_time = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+            time = duration.count();
+            cout << "Gestosc: " << GraphDensity[g]*100<<"%, " << " Ilosc wierzcholkow: " << GraphNodesNumber[z] << ", CZAS: " << time << "ms" << endl;
         }
     }
 }
+

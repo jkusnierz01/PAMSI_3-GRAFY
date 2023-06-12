@@ -4,6 +4,7 @@
 #include "graph_matrix.hh"
 #include <iostream>
 using namespace std;
+const int MAX_VERTICES = 500000;
 
 //*****************************************//
 //
@@ -14,9 +15,65 @@ using namespace std;
 //
 //
 //*******************************************
+//zbior rozlaczny 
+class DisjointSet
+{
+private:
+    int *parent;
+    int *rank;
+    int size;
+
+public:
+    DisjointSet(int n)
+    {
+        size = n;
+        parent = new int[n];
+        rank = new int[n];
+
+        // Inicjalizacja zbiorów rozłącznych
+        for (int i = 0; i < n; i++)
+        {
+            parent[i] = i; // Każdy element jest początkowo rodzicem samego siebie
+            rank[i] = 0;   // Początkowo każdy zbiór ma rangę 0
+        }
+    }
+
+    int find(int v)
+    {
+        if (v != parent[v])
+        {
+            parent[v] = find(parent[v]); // Skompresowanie ścieżki
+        }
+        return parent[v];
+    }
+
+    void merge(int v1, int v2)
+    {
+        int root1 = find(v1);
+        int root2 = find(v2);
+
+        if (root1 != root2)
+        {
+            if (rank[root1] < rank[root2])
+            {
+                parent[root1] = root2;
+            }
+            else if (rank[root1] > rank[root2])
+            {
+                parent[root2] = root1;
+            }
+            else
+            {
+                parent[root2] = root1;
+                rank[root1]++;
+            }
+        }
+    }
+};
+
 void quicksort(GraphElemEgde tab[], int tab_size, int first)
 {
-    float pivot = tab[(first + tab_size-1) / 2].Value;
+    float pivot = tab[(first + tab_size - 1) / 2].Value;
     int left = first, right = tab_size - 1;
     GraphElemEgde tmp;
     while (left <= right)
@@ -31,9 +88,20 @@ void quicksort(GraphElemEgde tab[], int tab_size, int first)
         }
         if (left <= right)
         {
-            tmp = tab[left];
-            tab[left] = tab[right];
-            tab[right] = tmp;
+            tmp.next = tab[left].next;
+            tmp.Node1 = tab[left].Node1;
+            tmp.Node2 = tab[left].Node2;
+            tmp.Value = tab[left].Value;
+
+            tab[left].next = tab[right].next;
+            tab[left].Node1 = tab[right].Node1;
+            tab[left].Node2 = tab[right].Node2;
+            tab[left].Value = tab[right].Value;
+
+            tab[right].next = tmp.next;
+            tab[right].Node1 = tmp.Node1;
+            tab[right].Node2 = tmp.Node2;
+            tab[right].Value = tmp.Value;
             left++;
             right--;
         }
@@ -41,195 +109,152 @@ void quicksort(GraphElemEgde tab[], int tab_size, int first)
     if (first < right)
         quicksort(tab, right + 1, first);
     if (left < tab_size - 1)
-        quicksort(tab, tab_size,left );
+        quicksort(tab, tab_size, left);
 }
 
-
-// Funkcja porównująca dwie krawędzie
-bool compareEdges(const GraphElemEgde& edge1, const GraphElemEgde& edge2)
+void Kruskal(Graph *graph, int numEdges, int numVertices)
 {
-    return edge1.Value < edge2.Value;
-}
-GraphElem *findRoot(GraphElem *elem)
-{
-    if (elem->next == nullptr)
-        return elem;
-    return findRoot(elem->next);
-}
-
-// Funkcja pomocnicza do łączenia dwóch zbiorów w strukturze zbiorów rozłącznych
-void unionSets(GraphElem *elem1, GraphElem *elem2)
-{
-    GraphElem *root1 = findRoot(elem1);
-    GraphElem *root2 = findRoot(elem2);
-    root2->next = root1;
-}
-
-// Algorytm Kruskala dla grafu opartego na liście sąsiedztwa
-void Kruskal(Graph graph)
-{
-    GraphElemEgde *mstEdges = nullptr; // Lista krawędzi MST
-    int numVertices = 0;               // Liczba wierzchołków w grafie
-
-    // Tworzenie zbioru rozłącznego dla każdego wierzchołka
-    GraphElem *currentVertex = graph.Head;
-    while (currentVertex != nullptr)
+    // tworzenie tablicy na podstawie listy jednokierunkowej
+    int iter = 0;
+    bool if_already_on_mst_node1 = false;
+    bool if_already_on_mst_node2 = false;
+    GraphElemEgde tab[numEdges];
+    GraphElemEgde *tmp = graph->EgdeHead;
+    GraphElem *NodesPointer = graph->Head;
+    while (tmp != nullptr)
     {
-        currentVertex->next = nullptr;
-        numVertices++;
-        currentVertex = currentVertex->next;
+        tab[iter].next = tmp->next;
+        tab[iter].Node1 = tmp->Node1;
+        tab[iter].Node2 = tmp->Node2;
+        tab[iter].Value = tmp->Value;
+        tmp = tmp->next;
+        iter++;
     }
-
-    // Sortowanie krawędzi grafu w kolejności niemalejącej
-    GraphElemEgde *currentEdge = graph.EgdeHead;
-    while (currentEdge != nullptr)
+    // tablica krawedzi minimal spanning tree - naszego drzewa wyjsciowego
+    GraphElemEgde mstEdges[numVertices - 1];
+    int mstEdgeCount = 0;
+    // tablica drzew rozlacznych - na poczatku kazdy wierzcholek jest osobnym drzewem rozlacznym
+    GraphElem vertices[numVertices];
+    for (int i = 0; i < numVertices; ++i)
     {
-        GraphElemEgde *minEdge = currentEdge;
-        GraphElemEgde *nextEdge = currentEdge->next;
+        vertices[i].NodeValue = NodesPointer->NodeValue;
+        vertices[i].next = NodesPointer->next;
+    }
+    quicksort(tab, numEdges, 0);
+    DisjointSet disjointSet(numVertices);
 
-        while (nextEdge != nullptr)
-        {
-            if (nextEdge->Value < minEdge->Value)
-                minEdge = nextEdge;
+    int edgeIndex = 0;
+    while (mstEdgeCount < numVertices - 1 && edgeIndex < numEdges)
+    {
+        GraphElemEgde nextEdge = tab[edgeIndex++];
 
-            nextEdge = nextEdge->next;
-        }
-
-        // Sprawdzanie czy dodanie krawędzi spowoduje cykl
-        GraphElem *root1 = findRoot(minEdge->Node1);
-        GraphElem *root2 = findRoot(minEdge->Node2);
+        int root1 = disjointSet.find(nextEdge.Node1->NodeValue);
+        int root2 = disjointSet.find(nextEdge.Node2->NodeValue);
 
         if (root1 != root2)
         {
-            // Krawędź nie tworzy cyklu, dodaj ją do MST
-            mstEdges->next = minEdge;
-            mstEdges = minEdge;
+            // Dodanie krawędzi do minimal spanning tree
+            mstEdges[mstEdgeCount++] = nextEdge;
 
-            // Połącz zbiory rozłączne zawierające wierzchołki krawędzi
-            unionSets(root1, root2);
+            // Połączenie zbiorów rozłącznych
+            disjointSet.merge(root1, root2);
+        }
+    }
+    for (int i = 0; i < mstEdgeCount; ++i)
+    {
+        std::cout << mstEdges[i].Node1->NodeValue << " -- " << mstEdges[i].Node2->NodeValue << std::endl;
+    }
+}
+
+// ALOGORYTM PRIMA
+
+void Prim(Graph* graph) {
+    int numVertices = 0;
+    GraphElem* current = graph->Head;
+    
+    while (current != nullptr) {
+        numVertices++;
+        current = current->next;
+    }
+    
+    bool visited[MAX_VERTICES] = { false }; // Tablica odwiedzonych wierzchołków
+    int minWeight[MAX_VERTICES]; // Tablica przechowująca minimalne wagi krawędzi do danego wierzchołka
+    int parent[MAX_VERTICES]; // Tablica przechowująca rodziców wierzchołków w minimalnym drzewie rozpinającym
+
+    // Inicjalizacja tablic
+    for (int i = 0; i < numVertices; i++) {
+        minWeight[i] = numeric_limits<int>::max(); // Przypisujemy maksymalną wartość
+        parent[i] = -1; // Przypisujemy wartość -1 (brak rodzica)
+    }
+
+    // Rozpoczynamy od pierwszego wierzchołka
+    int startVertex = 0;
+    visited[startVertex] = true;
+    minWeight[startVertex] = 0;
+    
+    // Przetwarzamy wszystkie krawędzie
+    GraphElemEgde* currentEdge = graph->EgdeHead;
+    while (currentEdge != nullptr) {
+        int node1 = currentEdge->Node1->NodeValue;
+        int node2 = currentEdge->Node2->NodeValue;
+        int weight = currentEdge->Value;
+
+        if (visited[node1] && !visited[node2] && weight < minWeight[node2]) {
+            // Jeśli krawędź prowadzi do jeszcze nieodwiedzonego wierzchołka
+            // i ma mniejszą wagę niż dotychczasowa minimalna waga dla tego wierzchołka,
+            // aktualizujemy minimalną wagę i rodzica
+            minWeight[node2] = weight;
+            parent[node2] = node1;
+        }
+        else if (!visited[node1] && visited[node2] && weight < minWeight[node1]) {
+            minWeight[node1] = weight;
+            parent[node1] = node2;
         }
 
         currentEdge = currentEdge->next;
     }
 
-    // Wyświetl krawędzie MST
-    currentEdge = graph.EgdeHead;
-    while (currentEdge != nullptr)
-    {
-        if (currentEdge != nullptr)
-            std::cout << currentEdge->Node1->NodeValue << " -- " << currentEdge->Node2->NodeValue << std::endl;
+    // Konstrukcja minimalnego drzewa rozpinającego
+    for (int i = 1; i < numVertices; i++) {
+        int minWeightVertex = -1;
+        int minWeightValue = numeric_limits<int>::max();
 
-        currentEdge = currentEdge->next;
-    }
-}
+        // Wybieramy wierzchołek o najmniejszej wadze
+        for (int j = 0; j < numVertices; j++) {
+            if (!visited[j] && minWeight[j] < minWeightValue) {
+                minWeightValue = minWeight[j];
+                minWeightVertex = j;
+            }
+        }
 
+        // Dodajemy krawędź do minimalnego drzewa rozpinającego
+        // cout << "Krawedz: " << parent[minWeightVertex] << " -- " << minWeightVertex << endl;
 
-GraphElemEgde* getMinimumEdge(GraphElemEgde *edgeList)
-{
-    GraphElemEgde *minEdge = edgeList;
-    GraphElemEgde *currentEdge = edgeList;
+        // Oznaczamy wierzchołek jako odwiedzony
+        visited[minWeightVertex] = true;
 
-    while (currentEdge != nullptr)
-    {
-        if (currentEdge->Value < minEdge->Value)
-            minEdge = currentEdge;
-        currentEdge = currentEdge->next;
-    }
+        // Aktualizujemy minimalne wagi dla sąsiadujących wierzchołków
+        currentEdge = graph->EgdeHead;
+        while (currentEdge != nullptr) {
+            int node1 = currentEdge->Node1->NodeValue;
+            int node2 = currentEdge->Node2->NodeValue;
+            int weight = currentEdge->Value;
 
-    return minEdge;
-}
+            if ((visited[node1] && !visited[node2] && weight < minWeight[node2]) ||
+                (!visited[node1] && visited[node2] && weight < minWeight[node1])) {
+                // Jeśli krawędź prowadzi do jeszcze nieodwiedzonego wierzchołka
+                // i ma mniejszą wagę niż dotychczasowa minimalna waga dla tego wierzchołka,
+                // aktualizujemy minimalną wagę i rodzica
+                minWeight[node2] = weight;
+                parent[node2] = node1;
+                minWeight[node1] = weight;
+                parent[node1] = node2;
+            }
 
-void addEdgeToMST(GraphElemEgde *&mstEdges, GraphElemEgde *edge)
-{
-    if (mstEdges == nullptr)
-    {
-        mstEdges = edge;
-        edge->next = nullptr;
-    }
-    else
-    {
-        edge->next = mstEdges;
-        mstEdges = edge;
-    }
-}
-
-void removeEdgeFromList(GraphElemEgde *&edgeList, GraphElemEgde *edge)
-{
-    if (edgeList == edge)
-    {
-        edgeList = edge->next;
-    }
-    else
-    {
-        GraphElemEgde *currentEdge = edgeList;
-        while (currentEdge->next != edge)
-        {
             currentEdge = currentEdge->next;
         }
-        currentEdge->next = edge->next;
     }
 }
-
-void Prim(Graph graph, int l_wierzcholkow)
-{
-    GraphElemEgde *mstEdges = nullptr; // Lista krawędzi MST
-
-    // Wybierz pierwszy wierzchołek jako startowy
-    GraphElem *startVertex = graph.Head;
-
-    // Utwórz tablicę odwiedzonych wierzchołków
-    bool *visited = new bool[l_wierzcholkow];
-    for (int i = 0; i < l_wierzcholkow; i++)
-    {
-        visited[i] = false;
-    }
-
-    // Utwórz listę krawędzi
-    GraphElemEgde *edgeList = graph.EgdeHead;
-
-    // Oznacz startowy wierzchołek jako odwiedzony
-    visited[startVertex->NodeValue] = true;
-
-    // Główna pętla algorytmu
-    while (edgeList != nullptr)
-    {
-        // Znajdź najmniejszą wagę krawędzi
-        GraphElemEgde *minEdge = getMinimumEdge(edgeList);
-
-        // Usuń krawędź z listy
-        removeEdgeFromList(edgeList, minEdge);
-
-        // Pobierz wierzchołki krawędzi
-        GraphElem *node1 = minEdge->Node1;
-        GraphElem *node2 = minEdge->Node2;
-
-        // Jeśli oba wierzchołki są odwiedzone, pomiń tę krawędź
-        if (visited[node1->NodeValue] && visited[node2->NodeValue])
-        {
-            delete minEdge;
-            continue;
-        }
-
-        // Dodaj krawędź do MST
-        addEdgeToMST(mstEdges, minEdge);
-
-        // Oznacz wierzchołki jako odwiedzone
-        visited[node1->NodeValue] = true;
-        visited[node2->NodeValue] = true;
-    }
-
-    // Wyświetl krawędzie MST
-    GraphElemEgde *currentEdge = mstEdges;
-    while (currentEdge != nullptr)
-    {
-        std::cout << currentEdge->Node1->NodeValue << " -- " << currentEdge->Node2->NodeValue << std::endl;
-        currentEdge = currentEdge->next;
-    }
-
-    // Zwolnienie pamięci
-    delete[] visited;
-}
-
 
 
 //*****************************************//
@@ -242,124 +267,139 @@ void Prim(Graph graph, int l_wierzcholkow)
 //
 //*******************************************
 
-void Kruskall(GraphMatrix graph)
+void Kruskal(GraphMatrix *graph, int numEdges, int numVertices)
 {
-    GraphElemEgde *mstEdges = nullptr; // Lista krawędzi MST
-    int numVertices = 0;               // Liczba wierzchołków w grafie
-
-    // Tworzenie zbioru rozłącznego dla każdego wierzchołka
-    GraphElem *currentVertex = graph.Head;
-    while (currentVertex != nullptr)
+    // tworzenie tablicy na podstawie listy jednokierunkowej
+    int iter = 0;
+    GraphElemEgde* tab = new GraphElemEgde[numEdges];
+    GraphElemEgde *tmp = graph->EgdeHead;
+    while (tmp != nullptr)
     {
-        currentVertex->next = nullptr;
-        numVertices++;
-        currentVertex = currentVertex->next;
+        tab[iter].next = tmp->next;
+        tab[iter].Node1 = tmp->Node1;
+        tab[iter].Node2 = tmp->Node2;
+        tab[iter].Value = tmp->Value;
+        tmp = tmp->next;
+        iter++;
     }
+    // tablica krawedzi minimal spanning tree - naszego drzewa wyjsciowego
+    GraphElemEgde mstEdges[numVertices - 1];
+    int mstEdgeCount = 0;
+    // tablica drzew rozlacznych - na poczatku kazdy wierzcholek jest osobnym drzewem rozlacznym
+    quicksort(tab, numEdges, 0);
+    DisjointSet disjointSet(numVertices);
 
-    
-    // Sortowanie krawędzi grafu w kolejności niemalejącej
-    GraphElemEgde *currentEdge = graph.EgdeHead;
-    while (currentEdge != nullptr)
+    int edgeIndex = 0;
+
+    while (mstEdgeCount < numVertices - 1 && edgeIndex < numEdges)
     {
-        GraphElemEgde *minEdge = currentEdge;
-        GraphElemEgde *nextEdge = currentEdge->next;
+        GraphElemEgde nextEdge = tab[edgeIndex++];
 
-        while (nextEdge != nullptr)
-        {
-            if (nextEdge->Value < minEdge->Value)
-                minEdge = nextEdge;
-
-            nextEdge = nextEdge->next;
-        }
-
-        // Sprawdzanie czy dodanie krawędzi spowoduje cykl
-        GraphElem *root1 = findRoot(minEdge->Node1);
-        GraphElem *root2 = findRoot(minEdge->Node2);
+        int root1 = disjointSet.find(nextEdge.Node1->NodeValue);
+        int root2 = disjointSet.find(nextEdge.Node2->NodeValue);
 
         if (root1 != root2)
         {
-            // Krawędź nie tworzy cyklu, dodaj ją do MST
-            mstEdges->next = minEdge;
-            mstEdges = minEdge;
+            // Dodanie krawędzi do minimal spanning tree
+            mstEdges[mstEdgeCount++] = nextEdge;
 
-            // Połącz zbiory rozłączne zawierające wierzchołki krawędzi
-            unionSets(root1, root2);
+            // Połączenie zbiorów rozłącznych
+            disjointSet.merge(root1, root2);
         }
-
-        currentEdge = currentEdge->next;
     }
-    
-    // Wyświetl krawędzie MST
-    currentEdge = graph.EgdeHead;
-    while (currentEdge != nullptr)
-    {
-        
-        if (currentEdge != nullptr)
-            std::cout << currentEdge->Node1->NodeValue << " -- " << currentEdge->Node2->NodeValue << std::endl;
-
-        currentEdge = currentEdge->next;
-    }
-    
+    // for (int i = 0; i < mstEdgeCount; ++i)
+    // {
+    //     std::cout << mstEdges[i].Node1->NodeValue << " -- " << mstEdges[i].Node2->NodeValue << std::endl;
+    // }
 }
 
-void Primm(GraphMatrix graph, int l_wierzcholkow)
-{
-    GraphElemEgde *mstEdges = nullptr; // Lista krawędzi MST
 
-    // Wybierz pierwszy wierzchołek jako startowy
-    GraphElem *startVertex = graph.Head;
+void Prim(GraphMatrix* graph) {
+    int numVertices = 0;
+    GraphElem* current = graph->Head;
+    
+    while (current != nullptr) {
+        numVertices++;
+        current = current->next;
+    }
+    
+    bool visited[MAX_VERTICES] = { false }; // Tablica odwiedzonych wierzchołków
+    int minWeight[MAX_VERTICES]; // Tablica przechowująca minimalne wagi krawędzi do danego wierzchołka
+    int parent[MAX_VERTICES]; // Tablica przechowująca rodziców wierzchołków w minimalnym drzewie rozpinającym
 
-    // Utwórz tablicę odwiedzonych wierzchołków
-    bool *visited = new bool[l_wierzcholkow];
-    for (int i = 0; i < l_wierzcholkow; i++)
-    {
-        visited[i] = false;
+    // Inicjalizacja tablic
+    for (int i = 0; i < numVertices; i++) {
+        minWeight[i] = numeric_limits<int>::max(); // Przypisujemy maksymalną wartość
+        parent[i] = -1; // Przypisujemy wartość -1 (brak rodzica)
     }
 
-    // Utwórz listę krawędzi
-    GraphElemEgde *edgeList = graph.EgdeHead;
+    // Rozpoczynamy od pierwszego wierzchołka
+    int startVertex = 0;
+    visited[startVertex] = true;
+    minWeight[startVertex] = 0;
+    
+    // Przetwarzamy wszystkie krawędzie
+    GraphElemEgde* currentEdge = graph->EgdeHead;
+    while (currentEdge != nullptr) {
+        int node1 = currentEdge->Node1->NodeValue;
+        int node2 = currentEdge->Node2->NodeValue;
+        int weight = currentEdge->Value;
 
-    // Oznacz startowy wierzchołek jako odwiedzony
-    visited[startVertex->NodeValue] = true;
-
-    // Główna pętla algorytmu
-    while (edgeList != nullptr)
-    {
-        // Znajdź najmniejszą wagę krawędzi
-        GraphElemEgde *minEdge = getMinimumEdge(edgeList);
-
-        // Usuń krawędź z listy
-        removeEdgeFromList(edgeList, minEdge);
-
-        // Pobierz wierzchołki krawędzi
-        GraphElem *node1 = minEdge->Node1;
-        GraphElem *node2 = minEdge->Node2;
-
-        // Jeśli oba wierzchołki są odwiedzone, pomiń tę krawędź
-        if (visited[node1->NodeValue] && visited[node2->NodeValue])
-        {
-            delete minEdge;
-            continue;
+        if (visited[node1] && !visited[node2] && weight < minWeight[node2]) {
+            // Jeśli krawędź prowadzi do jeszcze nieodwiedzonego wierzchołka
+            // i ma mniejszą wagę niż dotychczasowa minimalna waga dla tego wierzchołka,
+            // aktualizujemy minimalną wagę i rodzica
+            minWeight[node2] = weight;
+            parent[node2] = node1;
+        }
+        else if (!visited[node1] && visited[node2] && weight < minWeight[node1]) {
+            minWeight[node1] = weight;
+            parent[node1] = node2;
         }
 
-        // Dodaj krawędź do MST
-        addEdgeToMST(mstEdges, minEdge);
-
-        // Oznacz wierzchołki jako odwiedzone
-        visited[node1->NodeValue] = true;
-        visited[node2->NodeValue] = true;
-    }
-
-    // Wyświetl krawędzie MST
-    GraphElemEgde *currentEdge = mstEdges;
-    while (currentEdge != nullptr)
-    {
-        std::cout << currentEdge->Node1->NodeValue << " -- " << currentEdge->Node2->NodeValue << std::endl;
         currentEdge = currentEdge->next;
     }
 
-    // Zwolnienie pamięci
-    delete[] visited;
+    // Konstrukcja minimalnego drzewa rozpinającego
+    for (int i = 1; i < numVertices; i++) {
+        int minWeightVertex = -1;
+        int minWeightValue = numeric_limits<int>::max();
+
+        // Wybieramy wierzchołek o najmniejszej wadze
+        for (int j = 0; j < numVertices; j++) {
+            if (!visited[j] && minWeight[j] < minWeightValue) {
+                minWeightValue = minWeight[j];
+                minWeightVertex = j;
+            }
+        }
+
+        // Dodajemy krawędź do minimalnego drzewa rozpinającego
+        // cout << "Krawedz: " << parent[minWeightVertex] << " -- " << minWeightVertex << endl;
+
+        // Oznaczamy wierzchołek jako odwiedzony
+        visited[minWeightVertex] = true;
+
+        // Aktualizujemy minimalne wagi dla sąsiadujących wierzchołków
+        currentEdge = graph->EgdeHead;
+        while (currentEdge != nullptr) {
+            int node1 = currentEdge->Node1->NodeValue;
+            int node2 = currentEdge->Node2->NodeValue;
+            int weight = currentEdge->Value;
+
+            if ((visited[node1] && !visited[node2] && weight < minWeight[node2]) ||
+                (!visited[node1] && visited[node2] && weight < minWeight[node1])) {
+                // Jeśli krawędź prowadzi do jeszcze nieodwiedzonego wierzchołka
+                // i ma mniejszą wagę niż dotychczasowa minimalna waga dla tego wierzchołka,
+                // aktualizujemy minimalną wagę i rodzica
+                minWeight[node2] = weight;
+                parent[node2] = node1;
+                minWeight[node1] = weight;
+                parent[node1] = node2;
+            }
+
+            currentEdge = currentEdge->next;
+        }
+    }
 }
 
 #endif

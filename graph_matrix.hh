@@ -29,6 +29,20 @@ public:
             }
         }
     }
+    GraphMatrix()
+    {
+        Head = nullptr;
+        EgdeHead = nullptr;
+        adjacencyMatrix = new int *[NodesNumber];
+        for (int x = 0; x < NodesNumber; x++)
+        {
+            adjacencyMatrix[x] = new int[NodesNumber];
+            for (int j = 0; j < NodesNumber; j++)
+            {
+                adjacencyMatrix[x][j] = 0;
+            }
+        }
+    }
     // metoda do dodania nowego wierzcholka do listy wierzchołkow
     void addNodeList(int Value)
     {
