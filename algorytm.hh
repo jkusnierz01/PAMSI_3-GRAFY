@@ -18,7 +18,7 @@ const int MAX_VERTICES = 500000;
 //zbior rozlaczny 
 class DisjointSet
 {
-private:
+    public:
     int *parent;
     int *rank;
     int size;
@@ -114,6 +114,30 @@ void quicksort(GraphElemEgde tab[], int tab_size, int first)
     if (left < tab_size - 1)
         quicksort(tab, tab_size, left);
 }
+void printTree(GraphElemEgde mstEdges[], int node, int parent, int mstEdgeCount)
+{
+    if(parent == (-1))
+    {
+        std::cout << "X" << " -- " << node << std::endl;
+    }
+    else
+    std::cout << parent << " -- " << node << std::endl;
+
+    // Znajdź krawędzi wychodzące z bieżącego wierzchołka
+    for (int i = 0; i < mstEdgeCount; ++i)
+    {
+        if (mstEdges[i].Node1->NodeValue == node && mstEdges[i].Node2->NodeValue != parent)
+        {
+            int child = mstEdges[i].Node2->NodeValue;
+            printTree(mstEdges, child, node, mstEdgeCount); // Rekurencyjnie wywołaj funkcję dla dziecka
+        }
+        else if (mstEdges[i].Node2->NodeValue == node && mstEdges[i].Node1->NodeValue != parent)
+        {
+            int child = mstEdges[i].Node1->NodeValue;
+            printTree(mstEdges, child, node, mstEdgeCount); // Rekurencyjnie wywołaj funkcję dla dziecka
+        }
+    }
+}
 
 void Kruskal(Graph *graph, int numEdges, int numVertices)
 {
@@ -135,12 +159,6 @@ void Kruskal(Graph *graph, int numEdges, int numVertices)
     GraphElemEgde mstEdges[numVertices - 1];
     int mstEdgeCount = 0;
     // tablica drzew rozlacznych - na poczatku kazdy wierzcholek jest osobnym drzewem rozlacznym
-    GraphElem vertices[numVertices];
-    for (int i = 0; i < numVertices; ++i)
-    {
-        vertices[i].NodeValue = NodesPointer->NodeValue;
-        vertices[i].next = NodesPointer->next;
-    }
     quicksort(tab, numEdges, 0);
     DisjointSet disjointSet(numVertices);
 
@@ -151,7 +169,6 @@ void Kruskal(Graph *graph, int numEdges, int numVertices)
 
         int root1 = disjointSet.find(nextEdge.Node1->NodeValue);
         int root2 = disjointSet.find(nextEdge.Node2->NodeValue);
-
         if (root1 != root2)
         {
             // Dodanie krawędzi do minimal spanning tree
@@ -159,12 +176,40 @@ void Kruskal(Graph *graph, int numEdges, int numVertices)
 
             // Połączenie zbiorów rozłącznych
             disjointSet.merge(root1, root2);
+            // std::cout << "Wierzchołek " << nextEdge.Node1->NodeValue << " -- Rodzic " << disjointSet.parent[root1] << std::endl;
+            // std::cout << "Wierzchołek " << nextEdge.Node2->NodeValue << " -- Rodzic " << disjointSet.parent[root2] << std::endl;
         }
     }
     // for (int i = 0; i < mstEdgeCount; ++i)
     // {
     //     std::cout << mstEdges[i].Node1->NodeValue << " -- " << mstEdges[i].Node2->NodeValue << std::endl;
-    // }
+    // }   
+        // Znajdź korzeń minimalnego drzewa rozpinającego
+    int root = -1;
+    for (int i = 0; i < mstEdgeCount; ++i)
+    {
+        bool isRoot = true;
+        for (int j = 0; j < mstEdgeCount; ++j)
+        {
+            if (i != j && mstEdges[i].Node1->NodeValue == mstEdges[j].Node2->NodeValue)
+            {
+                isRoot = false;
+                break;
+            }
+        }
+        if (isRoot)
+        {
+            root = mstEdges[i].Node1->NodeValue;
+            break;
+        }
+    }
+
+    // Wypisanie drzewa spinającego od głównego wierzchołka do gałęzi
+    if (root != -1)
+    {
+        std::cout << "Root: " << root << std::endl;
+        printTree(mstEdges, root, -1, mstEdgeCount);
+    }
 }
 
 // ALOGORYTM PRIMA
@@ -308,10 +353,10 @@ void Kruskal(GraphMatrix *graph, int numEdges, int numVertices)
             disjointSet.merge(root1, root2);
         }
     }
-    // for (int i = 0; i < mstEdgeCount; ++i)
-    // {
-    //     std::cout << mstEdges[i].Node1->NodeValue << " -- " << mstEdges[i].Node2->NodeValue << std::endl;
-    // }
+    for (int i = 0; i < mstEdgeCount; ++i)
+    {
+        std::cout << mstEdges[i].Node1->NodeValue << " -- " << mstEdges[i].Node2->NodeValue << std::endl;
+    }
 }
 
 
@@ -375,7 +420,7 @@ void Prim(GraphMatrix* graph) {
         }
 
         // Dodajemy krawędź do minimalnego drzewa rozpinającego
-        // cout << "Krawedz: " << parent[minWeightVertex] << " -- " << minWeightVertex << endl;
+        cout << "Krawedz: " << parent[minWeightVertex] << " -- " << minWeightVertex << endl;
 
         // Oznaczamy wierzchołek jako odwiedzony
         visited[minWeightVertex] = true;
