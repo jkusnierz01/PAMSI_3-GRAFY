@@ -26,6 +26,7 @@ private:
 public:
     DisjointSet(int n)
     {
+        //poszczegolny element tablicy jest rozumiany jako konkretny wierzcholek
         size = n;
         parent = new int[n];
         rank = new int[n];
@@ -37,9 +38,10 @@ public:
             rank[i] = 0;   // Początkowo każdy zbiór ma rangę 0
         }
     }
-
+    // metoda sluzaca do znajdowania reprezentanta zbioru - korzenia root
     int find(int v)
     {
+        //jezeli wierzcholek v nie jest wlasnym rodzicem to znaczy ze nalezy do wiekszego podzbioru i szukamy rekurencyjnie wierzcholka - paretnt/root
         if (v != parent[v])
         {
             parent[v] = find(parent[v]); // Skompresowanie ścieżki
@@ -54,6 +56,7 @@ public:
 
         if (root1 != root2)
         {
+            // Jeśli ranga root1 jest mniejsza od rangi root2, to root1 staje się rodzicem root2
             if (rank[root1] < rank[root2])
             {
                 parent[root1] = root2;
@@ -116,9 +119,7 @@ void Kruskal(Graph *graph, int numEdges, int numVertices)
 {
     // tworzenie tablicy na podstawie listy jednokierunkowej
     int iter = 0;
-    bool if_already_on_mst_node1 = false;
-    bool if_already_on_mst_node2 = false;
-    GraphElemEgde tab[numEdges];
+    GraphElemEgde* tab = new GraphElemEgde[numEdges];;
     GraphElemEgde *tmp = graph->EgdeHead;
     GraphElem *NodesPointer = graph->Head;
     while (tmp != nullptr)
@@ -160,10 +161,10 @@ void Kruskal(Graph *graph, int numEdges, int numVertices)
             disjointSet.merge(root1, root2);
         }
     }
-    for (int i = 0; i < mstEdgeCount; ++i)
-    {
-        std::cout << mstEdges[i].Node1->NodeValue << " -- " << mstEdges[i].Node2->NodeValue << std::endl;
-    }
+    // for (int i = 0; i < mstEdgeCount; ++i)
+    // {
+    //     std::cout << mstEdges[i].Node1->NodeValue << " -- " << mstEdges[i].Node2->NodeValue << std::endl;
+    // }
 }
 
 // ALOGORYTM PRIMA
@@ -171,12 +172,12 @@ void Kruskal(Graph *graph, int numEdges, int numVertices)
 void Prim(Graph* graph) {
     int numVertices = 0;
     GraphElem* current = graph->Head;
-    
+    // liczymy liczbe wierzcholkow w grafie
     while (current != nullptr) {
         numVertices++;
         current = current->next;
     }
-    
+
     bool visited[MAX_VERTICES] = { false }; // Tablica odwiedzonych wierzchołków
     int minWeight[MAX_VERTICES]; // Tablica przechowująca minimalne wagi krawędzi do danego wierzchołka
     int parent[MAX_VERTICES]; // Tablica przechowująca rodziców wierzchołków w minimalnym drzewie rozpinającym

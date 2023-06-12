@@ -119,9 +119,9 @@ public:
     // DODANIE DO LISTY SASIEDZTWA I LISTY KRAWEDZI
     void addEdge(int Node1, int Node2, int Value)
     {
-        // sprawdzamy czy dane wierzcholki juz na  wierzcholkow
-        GraphElem *tmp1 = searchGraph(Node1); 
-        GraphElem *tmp2 = searchGraph(Node2);
+        // // sprawdzamy czy dane wierzcholki juz na  wierzcholkow
+         GraphElem *tmp1 = searchGraph(Node1); 
+         GraphElem *tmp2 = searchGraph(Node2);
         // jezeli nullptr znaczy ze ich nie ma
         if (tmp1 == nullptr) 
         {
@@ -287,57 +287,6 @@ public:
             cout << endl;
         }
     }
-    void quicksort(GraphElemEgde tab[], int tab_size, int first)
-{
-    float pivot = tab[(first + tab_size-1) / 2].Value;
-    int left = first, right = tab_size - 1;
-    GraphElemEgde tmp;
-    while (left <= right)
-    {
-        while (tab[left].Value < pivot)
-        {
-            left++;
-        }
-        while (tab[right].Value > pivot)
-        {
-            right--;
-        }
-        if (left <= right)
-        {
-            tmp = tab[left];
-            tab[left] = tab[right];
-            tab[right] = tmp;
-            left++;
-            right--;
-        }
-    }
-    if (first < right)
-        quicksort(tab, right + 1, first);
-    if (left < tab_size - 1)
-        quicksort(tab, tab_size,left );
-}
-    void KruskalAlgoritm()
-    {
-        GraphElemEgde* tmp = EgdeHead;
-        int iterator = 0;
-        while(tmp != nullptr)
-        {
-            tmp = tmp->next;
-            iterator++;
-        }
-        GraphElemEgde tab[iterator];
-        tmp = EgdeHead;
-        for(int i = 0;i<iterator;i++)
-        {
-            tab[i].Value = tmp->Value;
-            tab[i].Node1 = tmp->Node1;
-            tab[i].Node2 = tmp->Node2;
-            tmp = tmp->next;
-        }
-        quicksort(tab,iterator,0);
-
-    }
-    
 };
 
 
